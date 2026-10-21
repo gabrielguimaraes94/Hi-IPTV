@@ -53,9 +53,10 @@ export function img(src, cls, { full = false, eager = false } = {}) {
   if (!src) return i;
   const sm = full ? '' : small(src);
   i.src = sm || src;
+  let fell = !sm;   // já tentou a original? (flag evita laço se a URL normalizar diferente)
   i.onload = () => i.classList.add('ok');
   i.onerror = () => {
-    if (sm && i.src !== src) i.src = src;
+    if (!fell) { fell = true; i.src = src; }
     else i.classList.add('bad');
   };
   return i;

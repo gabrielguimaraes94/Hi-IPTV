@@ -24,7 +24,12 @@ export function playMovie(m, info, onClose) {
   });
 }
 
-function epTitle(ep) { return ep.t && !/^S\d+\s*E\d+$/i.test(ep.t.trim()) ? ep.t : `Episódio ${ep.num}`; }
+// O provedor manda "Série - S01E01 - Piloto": fica só o nome do episódio.
+function epTitle(ep) {
+  const m = (ep.t || '').match(/S\d+\s*E\d+\s*[-–]\s*(.+)$/i);
+  if (m) return m[1];
+  return ep.t && !/^S\d+\s*E\d+$/i.test(ep.t.trim()) ? ep.t : `Episódio ${ep.num}`;
+}
 
 function playEpisode(s, info, si, ei, onClose) {
   const sea = info.seasons[si], ep = sea.eps[ei], key = 'e:' + ep.id;
@@ -331,7 +336,15 @@ export function openDetail(kind, item) {
     (info.seasons[curSeason] ? info.seasons[curSeason].eps : []).forEach((ep, ei) => epList.append(epRow(ep, ei)));
     if (focusSeason) focusEl(seasonsBar.children[curSeason]);
   }
-  function refreshEps() { if (info) { renderEps(false); paintPrimary(); } paintPrimary(); }
+  // Ao fechar o player a lista é refeita (barras de progresso): devolve o foco ao mesmo episódio.
+  function refreshEps() {
+    if (info) {
+      const i = [...epList.children].indexOf(document.activeElement);
+      renderEps(false);
+      if (i >= 0) focusEl(epList.children[i]);
+    }
+    paintPrimary();
+  }
 
   function fill() {
     if (info.bd && info.bd[0]) bd.src = info.bd[0];

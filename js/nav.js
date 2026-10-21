@@ -5,8 +5,10 @@ const layers = [];   // { el, onBack, keys(e) }
 let rootBack = () => {};
 let needMore = () => false;
 
-export const pushLayer = l => { layers.push(l); return l; };
-export const popLayer = l => { const i = layers.indexOf(l); if (i >= 0) layers.splice(i, 1); };
+// Com uma camada aberta (detalhes, player, ajustes) a página de fundo não rola nem mostra barra.
+const lock = () => document.documentElement.classList.toggle('lock', layers.length > 0);
+export const pushLayer = l => { layers.push(l); lock(); return l; };
+export const popLayer = l => { const i = layers.indexOf(l); if (i >= 0) layers.splice(i, 1); lock(); };
 export const topLayer = () => layers[layers.length - 1];
 export const onRootBack = fn => { rootBack = fn; };
 export const setNeedMore = fn => { needMore = fn; };

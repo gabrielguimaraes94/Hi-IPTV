@@ -121,14 +121,17 @@ export function buildIndex(cat) {
   const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   D.norm = norm;
   for (const list of [D.vod, D.series, D.live]) for (const x of list) x.q = norm(x.n);
-  D.vodNew = [...D.vod].sort((a, b) => b.a - a.a);
-  D.seriesNew = [...D.series].sort((a, b) => b.a - a.a);
+  // Listas globais (novos, hero, busca) mostram cada título uma vez; as fileiras por categoria mantêm tudo.
+  const uniq = list => { const seen = new Set(); return list.filter(x => { const k = x.n.toLowerCase() + '|' + x.y; return !seen.has(k) && seen.add(k); }); };
+  const vodSorted = [...D.vod].sort((a, b) => b.a - a.a), seriesSorted = [...D.series].sort((a, b) => b.a - a.a);
+  D.vodNew = uniq(vodSorted);
+  D.seriesNew = uniq(seriesSorted);
   const group = list => {
     const m = new Map();
     for (const x of list) { if (!m.has(x.c)) m.set(x.c, []); m.get(x.c).push(x); }
     return m;
   };
-  D.vodBy = group(D.vodNew); D.seriesBy = group(D.seriesNew); D.liveBy = group(D.live);
+  D.vodBy = group(vodSorted); D.seriesBy = group(seriesSorted); D.liveBy = group(D.live);
   D.vodById = new Map(D.vod.map(x => [x.id, x]));
   D.seriesById = new Map(D.series.map(x => [x.id, x]));
   D.ready = true;

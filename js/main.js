@@ -3,6 +3,7 @@ import { ls, idb } from './store.js';
 import { configure, conf, login, refresh, loadCatalog, buildIndex, setBase, today, D } from './api.js';
 import { h, svg, ICON, toast } from './ui.js';
 import { focusEl, onRootBack, pushLayer, popLayer } from './nav.js';
+import { playerOpen } from './player.js';
 import * as V from './views.js';
 
 const $ = id => document.getElementById(id);
@@ -125,14 +126,19 @@ function showLogin(err) {
   focusEl(form.querySelector('input'));
 }
 
+// Tela inicial: aparece em toda abertura. A barra mostra o progresso só quando há atualização.
 function showSplash() {
-  const bar = h('i'), txt = h('p', { class: 'sub' }, 'Preparando…');
+  const bar = h('i'), txt = h('p', { class: 'sub' }, 'Abrindo…');
   bootScreen(h('div', { class: 'splash' }, brand(true), h('div', { class: 'bar' }, bar), txt));
-  return (done, total, label) => {
-    bar.style.transform = `scaleX(${done / total})`;
-    txt.textContent = done >= total ? 'Organizando o catálogo…' : `Atualizando a lista · ${label}`;
+  return {
+    step(done, total, label) {
+      bar.style.transform = `scaleX(${done / total})`;
+      txt.textContent = done >= total ? 'Organizando o catálogo…' : `Atualizando a lista · ${label}`;
+    },
+    fill() { bar.style.transform = 'scaleX(1)'; },
   };
 }
+const wait = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------------------------------------------------------------- boot
 
@@ -140,19 +146,25 @@ async function boot() {
   const c = ls.get('cfg');
   if (!c) return showLogin();
   configure(c);
+  const t0 = performance.now(), splash = showSplash();
   let cat = await loadCatalog();
   if (!cat || cat.day !== today()) {
-    const step = showSplash();
-    try { cat = await refresh(step); } catch (e) {
+    try { cat = await refresh(splash.step); } catch (e) {
       if (!cat) return showLogin('Não foi possível carregar a lista: ' + e.message);
       setBase(cat.server);
       toast('Sem conexão com o servidor: usando a lista salva.');
     }
-  } else setBase(cat.server);
+  } else { setBase(cat.server); splash.fill(); }
   buildIndex(cat);
+  await wait(Math.max(0, 900 - (performance.now() - t0)));
   buildTop();
   go('home');
   hideBoot();
 }
 
 boot();
+
+// App retomado (TV/aba aberta) depois da meia-noite: recarrega para atualizar a lista do novo dia.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && D.day && D.day !== today() && !playerOpen()) location.reload();
+});

@@ -34,21 +34,23 @@ function create() {
     const r = seek.getBoundingClientRect();
     if (isFinite(video.duration)) video.currentTime = ((e.clientX - r.left) / r.width) * video.duration;
   });
-  video.addEventListener('click', toggle);
-  el.addEventListener('mousemove', show);
-  video.addEventListener('waiting', () => el.classList.add('wait'));
-  video.addEventListener('playing', () => { clearTimeout(P.stallT); el.classList.remove('wait'); msg(''); icon(); });
-  video.addEventListener('pause', icon);
-  video.addEventListener('timeupdate', tick);
-  video.addEventListener('loadedmetadata', () => {
+  // Ao fechar, video.load() ainda dispara eventos assíncronos: só age se este player continua aberto.
+  const on = (ev, fn) => video.addEventListener(ev, () => { if (P && P.video === video) fn(); });
+  on('click', toggle);
+  el.addEventListener('mousemove', () => { if (P && P.el === el) show(); });
+  on('waiting', () => el.classList.add('wait'));
+  on('playing', () => { clearTimeout(P.stallT); el.classList.remove('wait'); msg(''); icon(); });
+  on('pause', icon);
+  on('timeupdate', tick);
+  on('loadedmetadata', () => {
     if (P.o && P.o.start > 0 && !P.o.live) video.currentTime = P.o.start;
   });
-  video.addEventListener('ended', () => {
+  on('ended', () => {
     const o = P.o;
     if (o.onTime && !o.live) o.onTime(video.duration, video.duration);
     o.onEnd ? o.onEnd() : close();
   });
-  video.addEventListener('error', () => fail(P.o, 'Não foi possível reproduzir este conteúdo.'));
+  on('error', () => fail(P.o, 'Não foi possível reproduzir este conteúdo.'));
   P.saveT = setInterval(() => {
     const o = P.o;
     if (o && o.onTime && !o.live && !video.paused && isFinite(video.duration)) o.onTime(video.currentTime, video.duration);
