@@ -1,6 +1,7 @@
 // Helpers de interface: criação de DOM, imagens com fallback, cartões e fileiras.
 import { small } from './api.js';
 import { setNeedMore } from './nav.js';
+import { ratingLabel } from './text.js';
 
 export function h(tag, props, ...kids) {
   const e = document.createElement(tag);
@@ -72,7 +73,7 @@ export function card(item, opts = {}) {
   return h('button', { class: 'card', 'data-f': '', title: item.n, onclick: opts.onOpen },
     frame, h('span', { class: 'cap' }, opts.cap || item.n));
 }
-export const ratingTag = r => (r > 0 ? '★ ' + r.toFixed(1) : '');
+export const ratingTag = ratingLabel;
 
 // Fileira horizontal. build() devolve os nós; só roda quando a fileira chega perto da tela.
 export function lazyRow(title, build, onMore) {

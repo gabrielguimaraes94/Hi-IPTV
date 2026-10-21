@@ -57,7 +57,8 @@ python -I -m py_compile serve.py
 ## Armadilhas
 
 - Nomes do provedor vêm **sem acento** ("Codigo Vinganca"); categorias em CAIXA ALTA. **Notas (`rating`) não são confiáveis**
-  (séries: 100% inteiros; filmes com ★ 10.0 e muitos ★ 4.0). 99,9% dos filmes são mp4; mkv/avi raros podem falhar no navegador.
+  (séries: 100% inteiros; filmes com ★ 10.0 e muitos ★ 4.0): `text.js` trata 0 e ≥10 como sem nota (`trustedRating`) e mostra inteiro quando for inteiro.
+  `pretty()` (`text.js`) arruma caixa, siglas e acentos das categorias; novas palavras sem acento vão em `FIX`. 99,9% dos filmes são mp4; mkv/avi raros podem falhar no navegador.
 - Existem `_small.jpg` para pôsteres de filmes/séries (13 KB vs 52 KB). `img()` cai para a original com uma flag — **não compare `img.src`
   com a URL original** (normalização cria laço de erros; já causou milhares de 404).
 - 403 em stream costuma ser o limite de 1 conexão. mpegts.js só existe no jsDelivr (não no cdnjs).
@@ -68,17 +69,12 @@ python -I -m py_compile serve.py
 
 ## Pendências (auditoria de 2026-10-20) — por prioridade
 
-1. **Segurança `serve.py`:** proxy aberto — aceita qualquer http(s) (inclusive `127.0.0.1`/rede privada) e manda `Access-Control-Allow-Origin: *`,
-   então qualquer site aberto no navegador lê a rede interna pelo proxy local (confirmado por curl). Remover ACAO `*` (página é same-origin),
-   validar `Host`/`Origin`, bloquear IPs privados/loopback, ou restringir ao host do provedor.
-2. **Log com senha:** `BaseHTTPRequestHandler` imprime a URL do proxy com usuário/senha; sobrescrever `log_message` para mascarar.
-3. **Notas:** ignorar 0/10.0 (e talvez 4.0) em "Melhor nota", "mais bem avaliados" e hero (`r >= 6.3`); inteiro nas séries ou esconder (`ratingTag` em `ui.js`).
-4. **PT:** `pretty()` em `views.js` faz Title Case ("Jogos Do Dia", "Hbo", "Record Tv"): usar caixa de frase + siglas (HBO, SBT, TV, UHD, 4K, DC, ESPN…)
-   e restaurar acentos das categorias (Lançamentos, Ação, Comédia, Animação/Infantil, Ficção, Documentários).
-5. **TV fraca:** `nav.js` chama `getComputedStyle` em cada focável a cada tecla; portais animam mesmo fora da tela (pausar com IntersectionObserver).
-6. **Player:** `Sem sinal neste canal agora` também aparece para 403 — diferenciar pelo código de resposta.
-7. Texto pequeno para 10 pés (`.tag` ≈ 13 px a 1080p); escala de raios inconsistente; `lastLive` é gravado e nunca lido; sem SRI nos CDNs;
-   hero de série sem sinopse (a lista não traz).
+Já feito: proxy do `serve.py` fechado e senha fora do log (2026-10-21); notas suspeitas e títulos/categorias em PT (`js/text.js`).
+
+1. **TV fraca:** `nav.js` chama `getComputedStyle` em cada focável a cada tecla; portais animam mesmo fora da tela (pausar com IntersectionObserver).
+2. **Player:** `Sem sinal neste canal agora` também aparece para 403 (limite de 1 tela) — diferenciar pelo código de resposta.
+3. Texto pequeno para 10 pés (`.tag` ≈ 13 px a 1080p); escala de raios inconsistente; `lastLive` é gravado e nunca lido; sem SRI nos CDNs;
+   hero de série sem sinopse (a lista não traz); decidir se esconde também a nota 4.0 (possível valor padrão).
 
 **Não testado:** mobile/tela pequena (só a home), próximo episódio automático, mkv/avi, refresh pós-meia-noite com app aberto,
 D-pad com controle real, desempenho em hardware de TV.

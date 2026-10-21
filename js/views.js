@@ -4,8 +4,8 @@ import { prog, mylist, ls } from './store.js';
 import { h, svg, ICON, img, card, ratingTag, lazyRow, watchRows, toast, fmtTime, fmtDur } from './ui.js';
 import { pushLayer, popLayer, focusEl, topLayer, setNeedMore } from './nav.js';
 import { openPlayer, closePlayer } from './player.js';
+import { pretty, trustedRating } from './text.js';
 
-const pretty = s => s.toLowerCase().replace(/(^|[\s/+-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const resumeAt = k => { const p = prog.get(k); return p && p.t / p.d < 0.95 ? p.t : 0; };
 const yearOf = (item, info) => item.y || (info && info.date ? +String(info.date).slice(0, 4) : 0) || '';
@@ -101,8 +101,8 @@ const catRows = (cats, by, mk, limit = 99, onMore) =>
 // ---------------------------------------------------------------- hero
 
 async function heroSlides(kinds) {
-  const mPool = shuffle(D.vodNew.filter(m => m.r >= 6.3 && m.i).slice(0, 60));
-  const sPool = shuffle(D.seriesNew.filter(s => s.b && s.r >= 6.3).slice(0, 60));
+  const mPool = shuffle(D.vodNew.filter(m => trustedRating(m.r) && m.r >= 6.3 && m.i).slice(0, 60));
+  const sPool = shuffle(D.seriesNew.filter(s => s.b && trustedRating(s.r) && s.r >= 6.3).slice(0, 60));
   const picks = kinds.map(k => (k === 'm' ? mPool.shift() : sPool.shift())).filter(Boolean);
   const out = await Promise.all(picks.map(async it => {
     try {
@@ -183,7 +183,7 @@ export function homeView(ctx) {
     continueRow(), listRow(),
     newRow('Filmes recém-adicionados', D.vodNew, movieCard, () => ctx.go('movies', { cat: '__new' })),
     newRow('Séries com episódios novos', D.seriesNew, seriesCard, () => ctx.go('series', { cat: '__new' })),
-    lazyRow('Os mais bem avaliados', () => [...D.vodNew.slice(0, 800)].sort((a, b) => b.r - a.r).slice(0, 40).map(movieCard)),
+    lazyRow('Os mais bem avaliados', () => D.vodNew.slice(0, 800).filter(m => trustedRating(m.r)).sort((a, b) => b.r - a.r).slice(0, 40).map(movieCard)),
     ...catRows(D.vodCats, D.vodBy, movieCard, 3, id => ctx.go('movies', { cat: id })),
     ...catRows(D.seriesCats, D.seriesBy, seriesCard, 3, id => ctx.go('series', { cat: id })),
   ].filter(Boolean);
@@ -235,7 +235,7 @@ function catalogView(kind, ctx) {
     dispose();
     body.textContent = '';
     const base = listOf(id);
-    const list = sort === 'new' ? base : sort === 'rating' ? [...base].sort((a, b) => b.r - a.r) : [...base].sort((a, b) => a.q.localeCompare(b.q));
+    const list = sort === 'new' ? base : sort === 'rating' ? [...base].sort((a, b) => (trustedRating(b.r) ? b.r : -1) - (trustedRating(a.r) ? a.r : -1)) : [...base].sort((a, b) => a.q.localeCompare(b.q));
     const grid = h('div', { class: 'pgrid' }), sent = h('div', { class: 'sent' });
     let n = 0;
     const more = () => {
