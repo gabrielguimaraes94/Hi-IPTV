@@ -12,7 +12,7 @@ const yearOf = (item, info) => item.y || (info && info.date ? +String(info.date)
 
 // ---------------------------------------------------------------- reprodução
 
-export function playMovie(m, info) {
+export function playMovie(m, info, onClose) {
   const key = 'm:' + m.id;
   openPlayer({
     title: m.n,
@@ -20,6 +20,7 @@ export function playMovie(m, info) {
     url: urlMovie(m),
     start: resumeAt(key),
     onTime: (t, d) => prog.save(key, t, d, { k: 'm', id: m.id, n: m.n, i: m.i }),
+    onClose,
   });
 }
 
@@ -296,7 +297,7 @@ export function openDetail(kind, item) {
     if (!isS) {
       const at = resumeAt(key);
       primary.append(at ? `Continuar de ${fmtTime(at)}` : 'Assistir');
-      primary.onclick = () => playMovie(item, info);
+      primary.onclick = () => playMovie(item, info, paintPrimary);
       return;
     }
     if (!info) { primary.append('Carregando…'); primary.onclick = () => toast('Carregando episódios…'); return; }

@@ -41,10 +41,11 @@ export const today = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+const CATALOG_V = 3;   // sobe quando muda a limpeza/estrutura dos dados em cache
 const clean = s => (s || '').replace(/\s+/g, ' ').trim();
 function splitYear(name) {
   const t = clean(name);
-  const m = t.match(/^(.*?)\s*[-–]\s*((?:19|20)\d{2})$/);
+  const m = t.match(/^(.*?)\s*[-–]\s*((?:19|20)\d{2})(?:\s*\((?:L|\d{1,2})\))?$/);
   return m ? [m[1], +m[2]] : [t, 0];
 }
 const firstBackdrop = b => (Array.isArray(b) ? b[0] : String(b || '').split(/\s+/)[0]) || '';
@@ -74,16 +75,22 @@ export async function refresh(onStep) {
   const ok = cats => new Set(cats.map(c => c.id));
   const okV = ok(vodCats), okS = ok(seriesCats), okL = ok(liveCats);
 
+  // O provedor repete o mesmo título (versões HD/FHD) na mesma categoria: fica um só.
+  const seen = new Set();
+  const dup = (c, n, y) => { const k = `${c}|${n.toLowerCase()}|${y}`; return seen.has(k) || !seen.add(k); };
+
   const vod = [];
   for (const x of raw.get_vod_streams) {
     if (x.is_adult === '1' || !okV.has(String(x.category_id))) continue;
     const [n, y] = splitYear(x.name);
+    if (dup('v' + x.category_id, n, y)) continue;
     vod.push({ id: x.stream_id, n, y, i: x.stream_icon, r: +x.rating || 0, a: +x.added || 0, c: String(x.category_id), x: x.container_extension || 'mp4' });
   }
   const series = [];
   for (const x of raw.get_series) {
     if (!okS.has(String(x.category_id))) continue;
     const [n, y0] = splitYear(x.name);
+    if (dup('s' + x.category_id, n, y0)) continue;
     series.push({
       id: x.series_id, n, y: y0 || +String(x.releaseDate || '').slice(0, 4) || 0, i: x.cover, b: firstBackdrop(x.backdrop_path),
       p: x.plot || '', g: x.genre || '', r: +x.rating || 0, a: +x.last_modified || 0, c: String(x.category_id),
@@ -96,7 +103,7 @@ export async function refresh(onStep) {
   }
 
   const cat = {
-    day: today(), at: Date.now(), user: cfg.user, server: base,
+    v: CATALOG_V, day: today(), at: Date.now(), user: cfg.user, server: base,
     acct: { exp: +info.user_info.exp_date || 0, maxc: +info.user_info.max_connections || 1 },
     vod, vodCats, series, seriesCats, live, liveCats,
   };
@@ -106,7 +113,7 @@ export async function refresh(onStep) {
 
 export async function loadCatalog() {
   const c = await idb.get('catalog');
-  return c && c.user === cfg.user ? c : null;
+  return c && c.v === CATALOG_V && c.user === cfg.user ? c : null;
 }
 
 export function buildIndex(cat) {
