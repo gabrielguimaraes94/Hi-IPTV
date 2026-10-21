@@ -58,3 +58,5 @@ serve.py          servidor local + proxy CORS (/proxy?u=)
 - Sem EPG (guia de programação) ainda.
 - Filmes `.mkv`/`.avi` (raros) podem não tocar no navegador.
 - O proxy do `serve.py` é só para desenvolvimento; no app Android TV o player nativo não precisa dele.
+- O proxy só aceita destinos públicos (recusa localhost e rede privada) e só responde a esta página. Provedor na rede local:
+  `HI_ALLOW_PRIVATE=1 python serve.py`. O log mostra só o host do destino, nunca usuário/senha.
