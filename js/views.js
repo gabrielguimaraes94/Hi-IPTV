@@ -2,7 +2,7 @@
 import { D, vodInfo, seriesInfo, urlMovie, urlEpisode, urlLive } from './api.js';
 import { prog, mylist, ls } from './store.js';
 import { h, svg, ICON, img, card, ratingTag, lazyRow, watchRows, toast, fmtTime, fmtDur } from './ui.js';
-import { pushLayer, popLayer, focusEl, topLayer } from './nav.js';
+import { pushLayer, popLayer, focusEl, topLayer, setNeedMore } from './nav.js';
 import { openPlayer, closePlayer } from './player.js';
 
 const pretty = s => s.toLowerCase().replace(/(^|[\s/+-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
@@ -93,10 +93,10 @@ function listRow() {
   return cards.length ? buildNow(lazyRow('Minha lista', () => cards)) : null;
 }
 
-const newRow = (title, list, mk) => lazyRow(title, () => list.slice(0, 40).map(mk));
-const catRows = (cats, by, mk, limit = 99) =>
+const newRow = (title, list, mk, onMore) => lazyRow(title, () => list.slice(0, 40).map(mk), onMore);
+const catRows = (cats, by, mk, limit = 99, onMore) =>
   cats.filter(c => (by.get(c.id) || []).length).slice(0, limit)
-    .map(c => lazyRow(pretty(c.n), () => by.get(c.id).slice(0, 40).map(mk)));
+    .map(c => lazyRow(pretty(c.n), () => by.get(c.id).slice(0, 40).map(mk), onMore && (() => onMore(c.id))));
 
 // ---------------------------------------------------------------- hero
 
@@ -181,11 +181,11 @@ export function homeView(ctx) {
 
   const rows = [
     continueRow(), listRow(),
-    newRow('Filmes recém-adicionados', D.vodNew, movieCard),
-    newRow('Séries com episódios novos', D.seriesNew, seriesCard),
+    newRow('Filmes recém-adicionados', D.vodNew, movieCard, () => ctx.go('movies', { cat: '__new' })),
+    newRow('Séries com episódios novos', D.seriesNew, seriesCard, () => ctx.go('series', { cat: '__new' })),
     lazyRow('Os mais bem avaliados', () => [...D.vodNew.slice(0, 800)].sort((a, b) => b.r - a.r).slice(0, 40).map(movieCard)),
-    ...catRows(D.vodCats, D.vodBy, movieCard, 3),
-    ...catRows(D.seriesCats, D.seriesBy, seriesCard, 3),
+    ...catRows(D.vodCats, D.vodBy, movieCard, 3, id => ctx.go('movies', { cat: id })),
+    ...catRows(D.seriesCats, D.seriesBy, seriesCard, 3, id => ctx.go('series', { cat: id })),
   ].filter(Boolean);
 
   const el = h('div', { class: 'home' }, heroHost, portals, ...rows);
@@ -198,26 +198,94 @@ export function homeView(ctx) {
   };
 }
 
-function catalogView(kind) {
+function catalogView(kind, ctx) {
   const isM = kind === 'm';
   const ctl = { stops: [], dead: false };
   const heroHost = h('div', { class: 'hero-host' });
   const mk = isM ? movieCard : seriesCard;
-  const rows = [
-    isM ? newRow('Recém-adicionados', D.vodNew, mk) : newRow('Atualizadas recentemente', D.seriesNew, mk),
-    ...catRows(isM ? D.vodCats : D.seriesCats, isM ? D.vodBy : D.seriesBy, mk),
-  ];
-  const el = h('div', { class: 'home catalog' }, heroHost, h('div', { class: 'rows' }, rows));
-  const stopRows = watchRows(el);
+  const by = isM ? D.vodBy : D.seriesBy;
+  const newest = isM ? D.vodNew : D.seriesNew;
+  const cats = (isM ? D.vodCats : D.seriesCats).filter(c => (by.get(c.id) || []).length);
+  const nameOf = id => (id === '__new' ? 'Recém-adicionados' : pretty(cats.find(c => c.id === id).n));
+  const listOf = id => (id === '__new' ? newest : by.get(id));
+  const SORTS = [['new', 'Recentes'], ['rating', 'Melhor nota'], ['az', 'A–Z']];
+  let cur = null, sort = 'new', dispose = () => {};
+
+  const chips = h('div', { class: 'chips' });
+  const body = h('div', { class: 'body' });
+
+  function paintChips() {
+    chips.textContent = '';
+    const chip = (id, label, count) => h('button', {
+      class: 'chip' + (cur === id ? ' on' : ''), 'data-f': '', 'data-scroll': 'x', onclick: () => select(id),
+    }, label, count != null ? h('small', {}, count.toLocaleString('pt-BR')) : null);
+    chips.append(chip(null, 'Destaques'), chip('__new', 'Recém-adicionados'), ...cats.map(c => chip(c.id, pretty(c.n), by.get(c.id).length)));
+  }
+
+  function showRows() {
+    dispose();
+    body.textContent = '';
+    body.append(
+      lazyRow(isM ? 'Recém-adicionados' : 'Atualizadas recentemente', () => newest.slice(0, 40).map(mk), () => select('__new')),
+      ...cats.map(c => lazyRow(pretty(c.n), () => by.get(c.id).slice(0, 40).map(mk), () => select(c.id))));
+    dispose = watchRows(body);
+  }
+
+  function showGrid(id) {
+    dispose();
+    body.textContent = '';
+    const base = listOf(id);
+    const list = sort === 'new' ? base : sort === 'rating' ? [...base].sort((a, b) => b.r - a.r) : [...base].sort((a, b) => a.q.localeCompare(b.q));
+    const grid = h('div', { class: 'pgrid' }), sent = h('div', { class: 'sent' });
+    let n = 0;
+    const more = () => {
+      if (n >= list.length) return false;
+      grid.append(...list.slice(n, n + 60).map(mk));
+      n += 60;
+      return true;
+    };
+    more();
+    body.append(
+      h('div', { class: 'ghead' }, h('h2', {}, nameOf(id)), h('small', {}, `${list.length.toLocaleString('pt-BR')} títulos`)),
+      h('div', { class: 'sorts' }, SORTS.map(([k, l]) => h('button', {
+        class: 'chip sm' + (sort === k ? ' on' : ''), 'data-f': '', 'data-scroll': 'x',
+        onclick: () => { sort = k; showGrid(id); focusEl(body.querySelector('.sorts .on')); },
+      }, l))),
+      grid, sent);
+    // Carrega mais 60 quando o fim chega perto; setNeedMore cobre o D-pad descendo rápido.
+    const io = new IntersectionObserver(es => { if (es[0].isIntersecting && more()) { io.unobserve(sent); io.observe(sent); } }, { rootMargin: '900px' });
+    io.observe(sent);
+    setNeedMore(more);
+    dispose = () => { io.disconnect(); setNeedMore(() => false); };
+  }
+
+  function select(id) {
+    cur = id;
+    paintChips();
+    id ? showGrid(id) : showRows();
+    const on = chips.querySelector('.chip.on');
+    focusEl(on);
+    chips.scrollTo({ left: on.offsetLeft - chips.clientWidth / 2 + on.offsetWidth / 2, behavior: 'smooth' });
+    if (id) chips.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+
+  paintChips();
+  showRows();
+  const el = h('div', { class: 'home catalog' }, heroHost, h('div', { class: 'rows' }, chips, body));
   mountHero(heroHost, isM ? ['m', 'm', 'm', 'm', 'm', 'm'] : ['s', 's', 's', 's', 's', 's'], ctl);
+  if (ctx.cat && (ctx.cat === '__new' || cats.some(c => c.id === ctx.cat))) { cur = ctx.cat; paintChips(); showGrid(ctx.cat); }
   return {
     el,
-    focus: () => { ctl.wanted = true; focusEl(el.querySelector('.hero .btn') || el.querySelector('.card')); },
-    cleanup: () => { ctl.dead = true; ctl.stops.forEach(f => f()); stopRows(); },
+    focus: () => {
+      if (cur) { focusEl(chips.querySelector('.chip.on')); chips.scrollIntoView({ block: 'start' }); return; }
+      ctl.wanted = true; focusEl(el.querySelector('.hero .btn') || chips.firstChild);
+    },
+    back: () => { if (cur !== null) { select(null); return true; } return false; },
+    cleanup: () => { ctl.dead = true; ctl.stops.forEach(f => f()); dispose(); },
   };
 }
-export const moviesView = () => catalogView('m');
-export const seriesView = () => catalogView('s');
+export const moviesView = ctx => catalogView('m', ctx);
+export const seriesView = ctx => catalogView('s', ctx);
 
 function tile(c, onOpen) {
   return h('button', { class: 'tile', 'data-f': '', title: c.n, onclick: onOpen },

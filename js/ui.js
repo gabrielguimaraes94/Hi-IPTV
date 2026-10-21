@@ -75,8 +75,10 @@ export function card(item, opts = {}) {
 export const ratingTag = r => (r > 0 ? '★ ' + r.toFixed(1) : '');
 
 // Fileira horizontal. build() devolve os nós; só roda quando a fileira chega perto da tela.
-export function lazyRow(title, build) {
-  const sec = h('section', { class: 'row lazy' }, h('h2', {}, title), h('div', { class: 'track' }));
+export function lazyRow(title, build, onMore) {
+  const head = h('div', { class: 'rh' }, h('h2', {}, title),
+    onMore ? h('button', { class: 'more', 'data-f': '', onclick: onMore }, 'Ver tudo ›') : null);
+  const sec = h('section', { class: 'row lazy' }, head, h('div', { class: 'track' }));
   sec._build = () => {
     if (sec._done) return false;
     sec._done = true;

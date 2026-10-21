@@ -128,7 +128,25 @@ html.lock { overflow: hidden; }
 @media (hover: hover) { .portal:hover { transform: scale(1.02); } }
 
 /* ---------- fileiras e cartões ---------- */
-.row h2 { font: 700 1.3rem/1.2 var(--display); padding: 0 var(--gut); margin-top: 1.8rem; }
+.rh { display: flex; align-items: baseline; gap: 1rem; padding: 0 var(--gut); margin-top: 1.8rem; }
+.row h2 { font: 700 1.3rem/1.2 var(--display); }
+.more { padding: .2rem .7rem; border-radius: var(--r); color: var(--mute); font-weight: 600; font-size: .9rem; }
+.kb .more:focus { background: var(--ink); color: var(--bg); }
+@media (hover: hover) { .more:hover { color: var(--ink); } }
+
+/* barra de categorias e grade de categoria */
+.chips { display: flex; gap: .5rem; overflow-x: auto; padding: 1rem var(--gut) .6rem; scrollbar-width: none; scroll-margin-top: 4.5rem; }
+.chips::-webkit-scrollbar { display: none; }
+.chips .chip { flex: none; white-space: nowrap; }
+.chip small { margin-left: .5rem; opacity: .6; font-weight: 600; }
+.chip.sm { padding: .35rem .85rem; font-size: .85rem; }
+.ghead { display: flex; align-items: baseline; gap: 1rem; padding: 1.2rem var(--gut) 0; }
+.ghead h2 { font: 800 2rem/1.1 var(--display); letter-spacing: -.02em; }
+.ghead small { color: var(--mute); font-weight: 600; }
+.sorts { display: flex; gap: .5rem; padding: .8rem var(--gut) 0; }
+.pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 1.4rem .9rem; padding: 1.2rem var(--gut) 3rem; }
+.pgrid .card { width: auto; }
+.sent { height: 1px; }
 .row.lazy { min-height: 18rem; }
 .rows { position: relative; margin-top: calc(var(--lap) * -1); }
 .track { display: flex; gap: .8rem; overflow-x: auto; padding: 1.2rem var(--gut); margin: -.4rem 0 -.4rem; scrollbar-width: none; scroll-padding: 0 var(--gut); }

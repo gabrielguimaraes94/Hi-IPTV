@@ -15,14 +15,14 @@ const brand = big => h('div', { class: 'brand' + (big ? ' big' : '') }, h('b', {
 
 // ---------------------------------------------------------------- navegação
 
-function go(name) {
+function go(name, opts = {}) {
   if (ctl) ctl.cleanup();
   const root = $('view');
   root.classList.remove('enter');
   root.textContent = '';
   current = name;
   document.querySelectorAll('#top .nav[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === name));
-  ctl = VIEWS[name]({ go });
+  ctl = VIEWS[name]({ go, ...opts });
   root.append(ctl.el);
   void root.offsetWidth;
   root.classList.add('enter');
@@ -41,7 +41,10 @@ function buildTop() {
   addEventListener('scroll', () => top.classList.toggle('solid', scrollY > 40), { passive: true });
 }
 
-onRootBack(() => { if (current !== 'home') go('home'); });
+onRootBack(() => {
+  if (ctl && ctl.back && ctl.back()) return;   // grade de categoria volta às fileiras
+  if (current !== 'home') go('home');
+});
 
 // ---------------------------------------------------------------- ajustes
 

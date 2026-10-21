@@ -26,6 +26,7 @@ export function focusEl(el) {
   const mode = el.dataset.scroll;
   if (mode === 'none') return;
   if (mode === 'top') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  if (mode === 'x') { el.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); return; }
   el.scrollIntoView({ block: el.closest('.layer') ? 'nearest' : 'center', inline: 'center', behavior: 'smooth' });
 }
 

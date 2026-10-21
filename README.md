@@ -20,6 +20,7 @@ As credenciais ficam só no `localStorage` do navegador — nunca no código.
   nas demais aberturas usa o cache. Ajustes → "Atualizar lista agora" força.
 - **Telas:** Início (hero rotativo + portais Filmes/Séries/TV com pôsteres em movimento + fileiras),
   Filmes, Séries (temporadas e episódios), TV ao Vivo (categorias + grade), Busca, Ajustes.
+- **Categorias:** em Filmes e Séries há uma barra de categorias (com contagem) e "Ver tudo ›" em cada fileira; a categoria abre em grade com ordenação (Recentes, Melhor nota, A–Z). Esc volta às fileiras.
 - **Continuar assistindo** e **Minha lista** ficam no navegador.
 - **Conteúdo adulto** é removido na carga do catálogo.
 - **Player:** HLS (hls.js) e MPEG-TS (mpegts.js). Canais ao vivo usam `.m3u8` com fallback para `.ts`.
