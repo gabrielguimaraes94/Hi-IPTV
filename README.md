@@ -22,6 +22,9 @@ As credenciais ficam só no `localStorage` do navegador — nunca no código.
 - **Telas:** Início (hero rotativo + portais Filmes/Séries/TV com pôsteres em movimento + fileiras),
   Filmes, Séries (temporadas e episódios), TV ao Vivo (categorias + grade), Busca, Ajustes.
 - **Categorias:** em Filmes e Séries há uma barra de categorias (com contagem) e "Ver tudo ›" em cada fileira; a categoria abre em grade com ordenação (Recentes, Melhor nota, A–Z). Esc volta às fileiras.
+- **Guia de programação:** no Xtream vem do `get_short_epg` (por canal, sob demanda); no M3U vem do link XMLTV opcional (lido em
+  streaming, só a janela de ~36 h fica salva; casa por `tvg-id` ou pelo nome do canal). Aparece no player e num painel "agora / a seguir"
+  na grade de TV ao Vivo.
 - **Continuar assistindo** e **Minha lista** ficam no navegador.
 - **Conteúdo adulto** é removido na carga do catálogo.
 - **Player:** HLS (hls.js) e MPEG-TS (mpegts.js). Canais ao vivo usam `.m3u8` com fallback para `.ts`.

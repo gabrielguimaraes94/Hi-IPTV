@@ -2,6 +2,7 @@
 import { viaProxy } from './api.js';
 import { pushLayer, popLayer, focusEl } from './nav.js';
 import { h, svg, ICON, fmtTime } from './ui.js';
+import { hhmm } from './epg.js';
 
 let P = null;   // estado do player aberto
 
@@ -20,7 +21,7 @@ function create() {
     video,
     h('div', { class: 'p-top' },
       h('button', { class: 'pbtn', 'data-f': '', 'data-scroll': 'none', 'aria-label': 'Voltar', onclick: close }, svg(ICON.back)),
-      h('div', { class: 'p-meta' }, h('div', { class: 'p-title' }), h('div', { class: 'p-sub' }))),
+      h('div', { class: 'p-meta' }, h('div', { class: 'p-title' }), h('div', { class: 'p-sub' }), h('div', { class: 'p-epg' }))),
     h('div', { class: 'p-spin' }),
     h('div', { class: 'p-msg' }),
     h('div', { class: 'p-bar' },
@@ -117,6 +118,23 @@ function fail(o, text) {
   msg(text);
 }
 
+// Canais ao vivo: mostra o que está no ar e o que vem a seguir, atualizando a cada minuto.
+function startEpg(o) {
+  clearInterval(P.epgT);
+  const box = P.el.querySelector('.p-epg');
+  box.textContent = '';
+  if (!o.live || !o.epg) return;
+  const paint = () => o.epg().then(r => {
+    if (!P || P.o !== o) return;
+    box.textContent = '';
+    if (!r) return;
+    if (r.now) box.append(h('div', {}, `Agora · ${hhmm(r.now[0])}–${hhmm(r.now[1])} · ${r.now[2]}`));
+    if (r.next) box.append(h('div', {}, `A seguir · ${hhmm(r.next[0])} · ${r.next[2]}`));
+  }).catch(() => {});
+  paint();
+  P.epgT = setInterval(paint, 60000);
+}
+
 function load(o) {
   P.o = o;
   const v = P.video;
@@ -125,7 +143,7 @@ function load(o) {
   P.el.querySelector('.p-title').textContent = o.title || '';
   P.el.querySelector('.p-sub').textContent = o.sub || '';
   P.seek.firstChild.style.transform = 'scaleX(0)';
-  msg(''); killEngine(); show();
+  msg(''); killEngine(); show(); startEpg(o);
 
   const url = viaProxy(o.url), path = o.url.split('?')[0].toLowerCase();
   clearTimeout(P.stallT);
@@ -155,7 +173,7 @@ export function closePlayer() { close(); }
 function close() {
   if (!P) return;
   const { video, o } = P;
-  clearInterval(P.saveT); clearTimeout(P.idleT); clearTimeout(P.stallT);
+  clearInterval(P.saveT); clearInterval(P.epgT); clearTimeout(P.idleT); clearTimeout(P.stallT);
   if (o && o.onTime && !o.live && isFinite(video.duration) && video.currentTime > 0) o.onTime(video.currentTime, video.duration);
   killEngine();
   popLayer(P.layer);

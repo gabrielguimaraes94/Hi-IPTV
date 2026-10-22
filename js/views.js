@@ -5,6 +5,7 @@ import { h, svg, ICON, img, card, ratingTag, lazyRow, watchRows, toast, fmtTime,
 import { pushLayer, popLayer, focusEl, topLayer, setNeedMore } from './nav.js';
 import { openPlayer, closePlayer } from './player.js';
 import { pretty, trustedRating } from './text.js';
+import { nowNext, hhmm } from './epg.js';
 
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const resumeAt = k => { const p = prog.get(k); return p && p.t / p.d < 0.95 ? p.t : 0; };
@@ -64,7 +65,7 @@ async function resumeEpisode(s, p) {
 function liveOpts(list, i, catName) {
   const c = list[i], n = list.length;
   ls.set('lastLive', c.id);
-  return { live: true, title: c.n, sub: catName, url: urlLive(c), alt: urlLive(c, 'ts'), zap: d => liveOpts(list, (i + d + n) % n, catName) };
+  return { live: true, title: c.n, sub: catName, url: urlLive(c), alt: urlLive(c, 'ts'), epg: () => nowNext(c), zap: d => liveOpts(list, (i + d + n) % n, catName) };
 }
 
 // ---------------------------------------------------------------- cartões e fileiras
@@ -288,30 +289,53 @@ export const moviesView = ctx => catalogView('m', ctx);
 export const seriesView = ctx => catalogView('s', ctx);
 
 function tile(c, onOpen) {
-  return h('button', { class: 'tile', 'data-f': '', title: c.n, onclick: onOpen },
+  const b = h('button', { class: 'tile', 'data-f': '', title: c.n, onclick: onOpen },
     h('span', { class: 'logo' }, h('span', { class: 'ph' }, c.n.slice(0, 2)), img(c.i, '', { full: true })),
     h('span', { class: 'nm' }, c.n));
+  b._c = c;   // o painel de programação da grade lê o canal daqui
+  return b;
 }
+
+const EPG_HINT = 'Passe por um canal para ver o que está no ar.';
+const epgNodes = (c, r) => (r
+  ? [h('b', {}, c.n), r.now ? ` · Agora ${hhmm(r.now[0])}–${hhmm(r.now[1])} ${r.now[2]}` : '', r.next ? ` · A seguir ${hhmm(r.next[0])} ${r.next[2]}` : '']
+  : [h('b', {}, c.n), ' · Sem guia de programação para este canal.']);
 
 export function liveView() {
   const cats = D.liveCats.filter(c => (D.liveBy.get(c.id) || []).length);
   let cur = ls.get('liveCat', cats[0] && cats[0].id);
   if (!cats.some(c => c.id === cur)) cur = cats[0] && cats[0].id;
   const rail = h('div', { class: 'rail' }), grid = h('div', { class: 'grid' });
+  // Painel "agora / a seguir" do canal em foco (com atraso para não disparar um pedido por tecla).
+  const strip = h('p', { class: 'epg-strip' }, EPG_HINT);
+  let epgT = 0, epgFor = null;
+  const showEpg = e => {
+    const t = e.target.closest && e.target.closest('.tile');
+    if (!t || !t._c || t._c === epgFor) return;
+    const c = epgFor = t._c;
+    clearTimeout(epgT);
+    epgT = setTimeout(async () => {
+      const r = await nowNext(c).catch(() => null);
+      if (epgFor === c) strip.replaceChildren(...epgNodes(c, r));
+    }, 280);
+  };
+  grid.addEventListener('focusin', showEpg);
+  grid.addEventListener('mouseover', showEpg);
 
   function select(id, keepFocus) {
     cur = id; ls.set('liveCat', id);
     [...rail.children].forEach(b => b.classList.toggle('on', b.dataset.id === id));
     const list = D.liveBy.get(id) || [], name = pretty(cats.find(c => c.id === id).n);
     grid.textContent = '';
-    grid.append(h('h2', {}, name), h('div', { class: 'tiles' }, list.map((c, i) => tile(c, () => openPlayer(liveOpts(list, i, name))))));
+    epgFor = null; strip.textContent = EPG_HINT;
+    grid.append(h('h2', {}, name), strip, h('div', { class: 'tiles' }, list.map((c, i) => tile(c, () => openPlayer(liveOpts(list, i, name))))));
     if (!keepFocus) window.scrollTo({ top: 0 });
   }
   cats.forEach(c => rail.append(h('button', { class: 'rail-i', 'data-f': '', 'data-id': c.id, onclick: () => select(c.id, true) },
     h('span', {}, pretty(c.n)), h('small', {}, (D.liveBy.get(c.id) || []).length))));
   select(cur, true);
   const el = h('div', { class: 'live' }, rail, grid);
-  return { el, focus: () => focusEl(rail.querySelector('.on') || rail.firstChild), cleanup() {} };
+  return { el, focus: () => focusEl(rail.querySelector('.on') || rail.firstChild), cleanup() { clearTimeout(epgT); } };
 }
 
 export function searchView() {

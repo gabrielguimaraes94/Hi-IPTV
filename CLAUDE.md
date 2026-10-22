@@ -45,6 +45,10 @@ python -I -m py_compile serve.py
 - **Cache diário:** `cat.day !== today()` (data local) → splash com progresso e re-download; mesmo dia → cache, zero requisições de catálogo.
   `visibilitychange` recarrega se o app for retomado em novo dia. **Suba `CATALOG_V` em `api.js` sempre que mudar a limpeza ou o formato
   dos dados**, senão o cache antigo continua valendo até a meia-noite.
+- **Guia (`epg.js`):** Xtream usa `get_short_epg` (títulos em base64, cache de 5 min por canal). M3U usa XMLTV lido em streaming por
+  `createXmltvParser` (puro, testável; guarda só [agora−30 min, agora+36 h], 40 programas/canal) e salvo no IndexedDB (`epg`, 1×/dia, em segundo plano,
+  falha nunca bloqueia). Casamento: `tvg-id`, senão nome do canal (`<display-name>`). No provedor de teste: XMLTV 11,8 MB, 47 mil programas, 92% dos
+  canais casam; `<channel id>` pode vir vazio, e os ids são nomes ("PREMIERE 3 HD"). Consumidores: `startEpg` (player) e o painel `.epg-strip` (grade de TV).
 - **Detalhes só sob demanda** (`vodInfo`/`seriesInfo`, cache 7 dias no IndexedDB) — nunca por cartão (seriam milhares de requisições).
 - **Views** (`views.js`) retornam `{ el, focus?, back?, cleanup }`; `main.go(name, opts)` monta `{ go, ...opts }` como contexto
   (ex.: "Ver tudo" na home chama `go('movies', { cat })`). `back()` devolve `true` se consumiu o Esc (grade de categoria → fileiras).
@@ -74,7 +78,8 @@ python -I -m py_compile serve.py
 
 ## Pendências (auditoria de 2026-10-20) — por prioridade
 
-Já feito: proxy do `serve.py` fechado e senha fora do log (2026-10-21); notas suspeitas e títulos/categorias em PT (`js/text.js`).
+Já feito: proxy do `serve.py` fechado e senha fora do log (2026-10-21); notas suspeitas e títulos/categorias em PT (`js/text.js`);
+fonte M3U + guia de programação (Xtream e XMLTV).
 
 1. **TV fraca:** `nav.js` chama `getComputedStyle` em cada focável a cada tecla; portais animam mesmo fora da tela (pausar com IntersectionObserver).
 2. **Player:** `Sem sinal neste canal agora` também aparece para 403 (limite de 1 tela) — diferenciar pelo código de resposta.

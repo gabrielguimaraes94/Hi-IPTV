@@ -179,6 +179,8 @@ html.lock { overflow: hidden; }
 .rail-i.on { color: var(--ink); background: rgba(244, 239, 230, .1); }
 .kb .rail-i:focus { background: var(--ink); color: var(--bg); }
 .grid h2 { font: 800 2rem/1.1 var(--display); letter-spacing: -.02em; }
+.epg-strip { margin-top: .6rem; min-height: 1.5em; color: var(--mute); }
+.epg-strip b { color: var(--ink); }
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: .9rem; padding: 1.2rem .4rem; }
 .tile { display: flex; flex-direction: column; align-items: center; gap: .5rem; padding: .8rem; border-radius: var(--r); background: var(--bg2); transition: transform .2s var(--ease); }
 .track .tile { flex: none; width: 11rem; }
@@ -230,6 +232,8 @@ html.lock { overflow: hidden; }
 .p-top { position: absolute; inset: 0 0 auto 0; display: flex; align-items: center; gap: 1rem; padding: 1.4rem var(--gut) 3rem; background: linear-gradient(rgba(0, 0, 0, .78), transparent); transition: opacity .3s; }
 .p-title { font: 700 1.4rem/1.2 var(--display); }
 .p-sub { color: var(--mute); }
+.p-epg { margin-top: .35rem; display: grid; gap: .1rem; font-size: .95rem; }
+.p-epg div:last-child:not(:first-child) { color: var(--mute); }
 .p-bar { position: absolute; inset: auto 0 0 0; display: flex; align-items: center; gap: 1.2rem; padding: 3rem var(--gut) 1.6rem; background: linear-gradient(transparent, rgba(0, 0, 0, .82)); transition: opacity .3s; }
 .player.idle .p-top, .player.idle .p-bar { opacity: 0; }
 .player.idle { cursor: none; }

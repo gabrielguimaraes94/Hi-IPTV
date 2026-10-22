@@ -4,6 +4,7 @@ import { configure, conf, isM3u, login, refresh, loadCatalog, buildIndex, setBas
 import { h, svg, ICON, toast } from './ui.js';
 import { focusEl, onRootBack, pushLayer, popLayer } from './nav.js';
 import { playerOpen } from './player.js';
+import { loadEpg, refreshEpg, epgStale, epgStatus } from './epg.js';
 import * as V from './views.js';
 
 const $ = id => document.getElementById(id);
@@ -48,6 +49,21 @@ onRootBack(() => {
 
 // ---------------------------------------------------------------- ajustes
 
+function epgText() {
+  if (!isM3u()) return 'sob demanda (Xtream)';
+  if (!conf().epg) return 'não configurado';
+  const st = epgStatus();
+  return st.loaded ? `${st.channels.toLocaleString('pt-BR')} canais · ${new Date(st.at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : 'carregando…';
+}
+
+// M3U com XMLTV: lê o guia em segundo plano (cache do dia no IndexedDB); falha no guia nunca bloqueia o app.
+function initEpg() {
+  if (!isM3u() || !conf().epg) return;
+  loadEpg()
+    .then(has => (has && !epgStale() ? null : refreshEpg().then(st => st && toast(`Guia de programação atualizado (${st.channels.toLocaleString('pt-BR')} canais)`))))
+    .catch(e => toast('Guia de programação indisponível: ' + e.message));
+}
+
 function settings() {
   const prev = document.activeElement;
   const exp = D.acct && D.acct.exp ? new Date(D.acct.exp * 1000).toLocaleDateString('pt-BR') : '—';
@@ -56,7 +72,7 @@ function settings() {
     popLayer(layer); el.remove();
     if (prev && prev.isConnected) prev.focus({ preventScroll: true });
   };
-  const wipe = () => { idb.del('catalog').then(() => location.reload()); };
+  const wipe = () => { Promise.all([idb.del('catalog'), idb.del('epg')]).then(() => location.reload()); };
   const first = h('button', { class: 'btn primary', 'data-f': '', onclick: wipe }, 'Atualizar lista agora');
   const el = h('div', { class: 'layer settings' },
     h('div', { class: 'panel' },
@@ -68,11 +84,12 @@ function settings() {
              h('dt', {}, 'Vencimento'), h('dd', {}, exp),
              h('dt', {}, 'Telas simultâneas'), h('dd', {}, String(D.acct ? D.acct.maxc : 1))]),
         h('dt', {}, 'Lista atualizada em'), h('dd', {}, upd),
+        h('dt', {}, 'Guia de programação'), h('dd', {}, epgText()),
         h('dt', {}, 'Catálogo'), h('dd', {}, `${D.vod.length.toLocaleString('pt-BR')} filmes · ${D.series.length.toLocaleString('pt-BR')} séries · ${D.live.length.toLocaleString('pt-BR')} canais`)),
       h('p', { class: 'hint' }, 'A lista é baixada na primeira abertura de cada dia. Conteúdo adulto fica oculto.'),
       h('div', { class: 'btns' },
         first,
-        h('button', { class: 'btn', 'data-f': '', onclick: () => { ['cfg', 'prog', 'list'].forEach(k => ls.del(k)); idb.del('catalog').then(() => location.reload()); } }, 'Sair da conta'),
+        h('button', { class: 'btn', 'data-f': '', onclick: () => { ['cfg', 'prog', 'list'].forEach(k => ls.del(k)); Promise.all([idb.del('catalog'), idb.del('epg')]).then(() => location.reload()); } }, 'Sair da conta'),
         h('button', { class: 'btn', 'data-f': '', onclick: close }, 'Fechar'))));
   const layer = pushLayer({ el, onBack: close });
   $('layers').append(el);
@@ -194,6 +211,7 @@ async function boot() {
   buildTop();
   go('home');
   hideBoot();
+  initEpg();
 }
 
 boot();
