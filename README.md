@@ -9,13 +9,14 @@ HTML/CSS/JS puro, sem build. Pensado para controle remoto (navegação espacial 
 python serve.py        # http://localhost:8080
 ```
 
-Abra o endereço, entre com **servidor**, **usuário** e **senha** da sua lista e deixe
-"Usar proxy local" marcado (a maioria dos provedores bloqueia o navegador por CORS).
+Abra o endereço e escolha a fonte da lista: **Usuário e senha** (Xtream Codes: servidor, usuário e senha) ou **Lista M3U**
+(link do `.m3u`, com guia de programação XMLTV opcional). Deixe "Usar proxy local" marcado (a maioria dos provedores bloqueia o navegador por CORS).
 As credenciais ficam só no `localStorage` do navegador — nunca no código.
 
 ## Como funciona
 
-- **Catálogo:** vem da API `player_api.php` (não do M3U de dezenas de MB) e fica no IndexedDB.
+- **Catálogo:** Xtream vem da API `player_api.php` (leve e com capas/sinopses); M3U é lido e organizado no próprio app
+  (filmes por `/movie/` ou extensão de vídeo, séries agrupadas pelo padrão `S01E02` no nome, o resto é TV ao vivo). Fica no IndexedDB.
   Na **primeira abertura de cada dia** o app baixa e atualiza tudo (splash com progresso);
   nas demais aberturas usa o cache. Ajustes → "Atualizar lista agora" força.
 - **Telas:** Início (hero rotativo + portais Filmes/Séries/TV com pôsteres em movimento + fileiras),

@@ -47,6 +47,12 @@ html.lock { overflow: hidden; }
 .fld span { color: var(--mute); font-size: .85rem; }
 .fld input, .search input { padding: .8rem 1rem; border-radius: var(--r); background: var(--bg2); border: 2px solid var(--line); }
 .fld input:focus, .search input:focus { border-color: var(--ink); outline: none; }
+.seg { display: flex; gap: .3rem; padding: .25rem; border-radius: var(--r); background: var(--bg2); }
+.seg-b { flex: 1; padding: .55rem .8rem; border-radius: .3rem; color: var(--mute); font-weight: 600; text-align: center; }
+.seg-b.on { background: rgba(244, 239, 230, .16); color: var(--ink); }
+.kb .seg-b:focus { background: var(--ink); color: var(--bg); }
+.grp { display: grid; gap: 1.1rem; }
+.login .hint { font-size: .85rem; }
 .chk { display: flex; gap: .6rem; align-items: center; color: var(--mute); font-size: .9rem; }
 .err { color: #ff8b73; min-height: 1.4em; }
 .hint { color: var(--mute); }

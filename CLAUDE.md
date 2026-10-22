@@ -33,7 +33,12 @@ python -I -m py_compile serve.py
 
 **Fluxo de dados:** `main.js` (boot) → `api.js` → IndexedDB → `D` → `views.js` → `player.js`.
 
-- `api.js` fala com `player_api.php`. `refresh()` baixa 6 endpoints em paralelo, **compacta** (campos curtos: `n,y,i,r,a,c,x…`),
+- **Duas fontes** (`cfg.type`): `xtream` (API) e `m3u` (link do arquivo). `refresh()` escolhe `refreshXtream` ou `refreshM3u`; o cache é
+  validado por `cat.src` (tipo + host/usuário ou URL), então trocar de lista refaz o catálogo. No M3U cada item leva a URL pronta em `u`,
+  não há notas/backdrops/sinopses (hero some, "mais bem avaliados" é omitido), `m3u.js` (puro, testável no Node) classifica e agrupa séries
+  e guarda episódios como tuplas em `cat.eps` (expandidas por `expandSeries` ao abrir a série). Lista grande de episódios é pesada
+  (M3U do provedor de teste: ~46 MB de catálogo, heap ~176 MB) — Xtream é preferível quando existir.
+- `api.js` fala com `player_api.php`. `refreshXtream()` baixa 6 endpoints em paralelo, **compacta** (campos curtos: `n,y,i,r,a,c,x…`),
   remove adulto/duplicatas e grava um único registro `catalog` no IndexedDB. `buildIndex()` preenche o objeto global **`D`**
   (arrays `vod/series/live` com `q` normalizado para busca, `Map`s por categoria e por id). Duas visões do mesmo dado:
   `vodNew/seriesNew` (únicas por título+ano: hero, "novos", busca) e `vodBy/seriesBy` (completas por categoria).

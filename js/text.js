@@ -25,6 +25,18 @@ export function pretty(s) {
   });
 }
 
+// Categorias/nomes que saem do app inteiro.
+export const ADULT = /18\+|adult|porno|hentai|xxx/i;
+
+export const clean = s => (s || '').replace(/\s+/g, ' ').trim();
+
+// "Nome - 2026", "Nome - 2026 (L)" → ["Nome", 2026]; sem ano → [nome, 0].
+export function splitYear(name) {
+  const t = clean(name);
+  const m = t.match(/^(.*?)\s*[-–]\s*((?:19|20)\d{2})(?:\s*\((?:L|\d{1,2})\))?$/);
+  return m ? [m[1], +m[2]] : [t, 0];
+}
+
 // A nota do provedor só é confiável entre 0 e 10 exclusivos: 0 é "sem nota" e 10.0 aparece como valor de teto/padrão.
 export const trustedRating = r => r > 0 && r < 10;
 

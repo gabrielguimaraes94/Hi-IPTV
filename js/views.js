@@ -183,7 +183,7 @@ export function homeView(ctx) {
     continueRow(), listRow(),
     newRow('Filmes recém-adicionados', D.vodNew, movieCard, () => ctx.go('movies', { cat: '__new' })),
     newRow('Séries com episódios novos', D.seriesNew, seriesCard, () => ctx.go('series', { cat: '__new' })),
-    lazyRow('Os mais bem avaliados', () => D.vodNew.slice(0, 800).filter(m => trustedRating(m.r)).sort((a, b) => b.r - a.r).slice(0, 40).map(movieCard)),
+    ...(D.vodNew.some(m => trustedRating(m.r)) ? [lazyRow('Os mais bem avaliados', () => D.vodNew.slice(0, 800).filter(m => trustedRating(m.r)).sort((a, b) => b.r - a.r).slice(0, 40).map(movieCard))] : []),
     ...catRows(D.vodCats, D.vodBy, movieCard, 3, id => ctx.go('movies', { cat: id })),
     ...catRows(D.seriesCats, D.seriesBy, seriesCard, 3, id => ctx.go('series', { cat: id })),
   ].filter(Boolean);
@@ -247,7 +247,7 @@ function catalogView(kind, ctx) {
     more();
     body.append(
       h('div', { class: 'ghead' }, h('h2', {}, nameOf(id)), h('small', {}, `${list.length.toLocaleString('pt-BR')} títulos`)),
-      h('div', { class: 'sorts' }, SORTS.map(([k, l]) => h('button', {
+      h('div', { class: 'sorts' }, SORTS.filter(([k]) => k !== 'rating' || base.some(x => trustedRating(x.r))).map(([k, l]) => h('button', {
         class: 'chip sm' + (sort === k ? ' on' : ''), 'data-f': '', 'data-scroll': 'x',
         onclick: () => { sort = k; showGrid(id); focusEl(body.querySelector('.sorts .on')); },
       }, l))),

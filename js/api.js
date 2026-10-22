@@ -1,18 +1,28 @@
-// Cliente Xtream Codes (player_api.php) + catálogo em cache diário.
+// Fontes de lista (Xtream Codes via player_api.php, ou M3U) + catálogo em cache diário.
 import { idb } from './store.js';
+import { clean, splitYear, ADULT } from './text.js';
+import { parseM3U, buildCatalog, expandSeries } from './m3u.js';
 
-let cfg = null;   // { host, user, pass, proxy }
-let base = '';    // origem dos streams (server_info)
+let cfg = null;   // { type: 'xtream'|'m3u', proxy, host, user, pass | url, epg }
+let base = '';    // origem dos streams (server_info do Xtream)
 
 export const D = {};   // catálogo indexado (preenchido por buildIndex)
 
-const ADULT = /18\+|adult|porno|hentai|xxx/i;
 const normHost = h => { h = h.trim().replace(/\/+$/, ''); return /^https?:\/\//i.test(h) ? h : 'http://' + h; };
 
-export function configure(c) { cfg = { ...c, host: normHost(c.host) }; base = ''; }
+export function configure(c) {
+  const type = c.type === 'm3u' ? 'm3u' : 'xtream';
+  cfg = type === 'm3u'
+    ? { ...c, type, url: c.url.trim(), epg: (c.epg || '').trim() }
+    : { ...c, type, host: normHost(c.host) };
+  base = '';
+}
 export const conf = () => cfg;
+export const isM3u = () => !!cfg && cfg.type === 'm3u';
 export const setBase = b => { base = b; };
 export const viaProxy = u => (cfg && cfg.proxy ? '/proxy?u=' + encodeURIComponent(u) : u);
+// Identifica a fonte do cache: trocar de lista/conta invalida o catálogo salvo.
+const sourceKey = () => (cfg.type === 'm3u' ? 'm3u|' + cfg.url : 'xtream|' + cfg.host + '|' + cfg.user);
 
 export async function api(action, params = {}) {
   const q = new URLSearchParams({ username: cfg.user, password: cfg.pass, ...(action ? { action } : {}), ...params });
@@ -29,10 +39,10 @@ export async function login() {
   return d;
 }
 
-// ---- URLs de reprodução ----
-export const urlMovie = m => `${base}/movie/${cfg.user}/${cfg.pass}/${m.id}.${m.x || 'mp4'}`;
-export const urlEpisode = e => `${base}/series/${cfg.user}/${cfg.pass}/${e.id}.${e.ext || 'mp4'}`;
-export const urlLive = (c, ext = 'm3u8') => `${base}/live/${cfg.user}/${cfg.pass}/${c.id}.${ext}`;
+// ---- URLs de reprodução (M3U já traz a URL pronta em `u`) ----
+export const urlMovie = m => m.u || `${base}/movie/${cfg.user}/${cfg.pass}/${m.id}.${m.x || 'mp4'}`;
+export const urlEpisode = e => e.u || `${base}/series/${cfg.user}/${cfg.pass}/${e.id}.${e.ext || 'mp4'}`;
+export const urlLive = (c, ext = 'm3u8') => (c.u ? (ext === 'm3u8' ? c.u : null) : `${base}/live/${cfg.user}/${cfg.pass}/${c.id}.${ext}`);
 export const small = u => (u ? u.replace('_big.', '_small.') : '');
 
 // ---- Catálogo ----
@@ -41,14 +51,9 @@ export const today = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-const CATALOG_V = 3;   // sobe quando muda a limpeza/estrutura dos dados em cache
-const clean = s => (s || '').replace(/\s+/g, ' ').trim();
-function splitYear(name) {
-  const t = clean(name);
-  const m = t.match(/^(.*?)\s*[-–]\s*((?:19|20)\d{2})(?:\s*\((?:L|\d{1,2})\))?$/);
-  return m ? [m[1], +m[2]] : [t, 0];
-}
+const CATALOG_V = 4;   // sobe quando muda a limpeza/estrutura dos dados em cache
 const firstBackdrop = b => (Array.isArray(b) ? b[0] : String(b || '').split(/\s+/)[0]) || '';
+const tick = () => new Promise(r => setTimeout(r, 0));   // deixa a barra de progresso pintar antes de trabalho pesado
 
 const JOBS = [
   ['Categorias de filmes', 'get_vod_categories'],
@@ -60,6 +65,32 @@ const JOBS = [
 ];
 
 export async function refresh(onStep) {
+  return cfg.type === 'm3u' ? refreshM3u(onStep) : refreshXtream(onStep);
+}
+
+async function refreshM3u(onStep) {
+  const total = 3;
+  onStep(0, total, 'Baixando a lista');
+  const r = await fetch(viaProxy(cfg.url));
+  if (!r.ok) throw new Error('Servidor respondeu ' + r.status);
+  const text = await r.text();
+  onStep(1, total, 'Lendo os canais');
+  await tick();
+  const entries = parseM3U(text);
+  if (!entries.length) throw new Error('Nenhum canal encontrado na lista.');
+  onStep(2, total, 'Organizando');
+  await tick();
+  const built = buildCatalog(entries, t => ADULT.test(t));
+  const cat = {
+    v: CATALOG_V, day: today(), at: Date.now(), type: 'm3u', src: sourceKey(), user: '', server: '',
+    acct: { exp: 0, maxc: 0 }, ...built,
+  };
+  await idb.set('catalog', cat);
+  onStep(3, total, 'Concluído');
+  return cat;
+}
+
+async function refreshXtream(onStep) {
   const info = await login();
   let done = 0;
   onStep(0, JOBS.length, 'Conectando');
@@ -103,7 +134,7 @@ export async function refresh(onStep) {
   }
 
   const cat = {
-    v: CATALOG_V, day: today(), at: Date.now(), user: cfg.user, server: base,
+    v: CATALOG_V, day: today(), at: Date.now(), type: 'xtream', src: sourceKey(), user: cfg.user, server: base,
     acct: { exp: +info.user_info.exp_date || 0, maxc: +info.user_info.max_connections || 1 },
     vod, vodCats, series, seriesCats, live, liveCats,
   };
@@ -113,11 +144,12 @@ export async function refresh(onStep) {
 
 export async function loadCatalog() {
   const c = await idb.get('catalog');
-  return c && c.v === CATALOG_V && c.user === cfg.user ? c : null;
+  return c && c.v === CATALOG_V && c.src === sourceKey() ? c : null;
 }
 
 export function buildIndex(cat) {
   Object.assign(D, cat);
+  D.eps = cat.eps || null;   // só M3U: temporadas/episódios agrupados localmente
   const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   D.norm = norm;
   for (const list of [D.vod, D.series, D.live]) for (const x of list) x.q = norm(x.n);
@@ -154,15 +186,17 @@ function cached(key, loader, ttl = 7 * 864e5) {
 }
 const backdrops = i => (Array.isArray(i.backdrop_path) && i.backdrop_path.length ? i.backdrop_path : String(i.backdrop || '').split(/\s+/).filter(Boolean));
 
-export const vodInfo = id => cached('vi:' + id, async () => {
+const EMPTY_INFO = { bd: [], plot: '', genre: '', cast: '', dir: '', date: '', dur: 0, rating: 0 };
+
+export const vodInfo = id => (isM3u() ? Promise.resolve(EMPTY_INFO) : cached('vi:' + id, async () => {
   const i = (await api('get_vod_info', { vod_id: id })).info || {};
   return {
     bd: backdrops(i), plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '',
     dir: i.director || '', date: i.releasedate || '', dur: +i.duration_secs || 0, rating: +i.rating || 0,
   };
-});
+}));
 
-export const seriesInfo = id => cached('si:' + id, async () => {
+export const seriesInfo = id => (isM3u() ? Promise.resolve(expandSeries(D.eps[id])) : cached('si:' + id, async () => {
   const d = await api('get_series_info', { series_id: id });
   const i = d.info || {};
   const eps = Array.isArray(d.episodes) ? { 1: d.episodes } : d.episodes || {};
@@ -177,4 +211,4 @@ export const seriesInfo = id => cached('si:' + id, async () => {
     bd: backdrops(i), plot: i.plot || '', genre: i.genre || '', cast: i.cast || '', dir: i.director || '',
     date: i.releaseDate || '', rating: +i.rating || 0, seasons,
   };
-});
+}));
