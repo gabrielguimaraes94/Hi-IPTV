@@ -84,25 +84,17 @@ python -I -m py_compile serve.py
   "portais" com pôsteres derivando. A skill `/ui-humanizer` foi usada; nenhum tell classe A restou.
 - Conteúdo adulto é removido na carga (regex `ADULT` + `is_adult`). Decisão pendente do usuário: bloqueio por senha?
 
-## Pendências (auditoria de 2026-10-20) — por prioridade
+## Progresso
 
-Já feito: proxy do `serve.py` fechado e senha fora do log (2026-10-21); notas suspeitas e títulos/categorias em PT (`js/text.js`);
-fonte M3U + guia de programação (Xtream e XMLTV).
-
-1. **TV fraca:** `nav.js` chama `getComputedStyle` em cada focável a cada tecla; portais animam mesmo fora da tela (pausar com IntersectionObserver).
-2. **Player:** `Sem sinal neste canal agora` também aparece para 403 (limite de 1 tela) — diferenciar pelo código de resposta.
-3. Texto pequeno para 10 pés (`.tag` ≈ 13 px a 1080p); escala de raios inconsistente; `lastLive` é gravado e nunca lido; sem SRI nos CDNs;
-   hero de série sem sinopse (a lista não traz); decidir se esconde também a nota 4.0 (possível valor padrão).
-
-**Não testado:** mobile/tela pequena (só a home), próximo episódio automático, mkv/avi, refresh pós-meia-noite com app aberto,
-D-pad com controle real, desempenho em hardware de TV.
+**`progress.md`** guarda o que está feito, em andamento, as pendências da auditoria por prioridade e o que não foi testado.
+Atualize-o no mesmo commit de cada passo.
 
 ## Roadmap combinado
 
-1. Pendências acima + canais favoritos/último canal + "Novo".
+1. Pendências do `progress.md` + canais favoritos/último canal + "Novo".
 2. **Android TV** (WebView ou ExoPlayer) cedo, para descobrir D-pad/desempenho/codec reais; o proxy some no app nativo.
    Perguntar ao usuário se tem Google TV, Android Studio ou celular Android para testar.
-3. EPG (`get_short_epg`), zapping por número, mini-lista no player.
+3. Zapping por número, mini-lista no player (EPG já feito).
 4. **Ativação por aparelho (modelo IBO Player)**, só depois de o player estar garantido: app sem conteúdo, ID do aparelho (formato MAC, gerado —
    o MAC real não é legível no Android 6+) + chave; exige servidor, painel web e pagamento; vender só o **software**, nunca conteúdo
    (Google Play recusa IPTV com conteúdo embutido). Começar pelo servidor mínimo com ativação manual.
