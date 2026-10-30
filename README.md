@@ -29,6 +29,9 @@ As credenciais ficam só no `localStorage` do navegador — nunca no código.
 - **Conteúdo adulto** é removido na carga do catálogo.
 - **Player:** HLS (hls.js) e MPEG-TS (mpegts.js). Canais ao vivo usam `.m3u8` com fallback para `.ts`.
   Só um stream por vez — muitas contas permitem apenas 1 conexão.
+- **Engrenagem no player:** "Estatísticas para nerds" (motor, resolução/fps, codecs, taxa, banda, buffer, latência, quadros
+  perdidos, servidor — só o host, nunca a URL com usuário/senha), **Qualidade** e **Áudio** (quando o stream HLS oferece mais de uma
+  opção) e **Velocidade** (filmes e séries).
 
 ## Teclas
 
