@@ -18,8 +18,11 @@ Detalhes de cada passo estão no `git log`; arquitetura e armadilhas no `CLAUDE.
       Órbita futurista/minimalista (cantos retos, Sora fina, rótulos JetBrains Mono, fileiras numeradas, mira no foco). Visto em Chrome headless
       com a conta real (home, detalhe, TV, ajustes); hover/foco da mira visto com catálogo falso
 
+- [x] 2026-10-29: tema **Aurora** ("cara de IA"): aurora animada, luz que segue o foco (`js/fx.js`), borda em gradiente girando, títulos em
+      gradiente, vidro em barras/painéis. Visto em Chrome headless com a conta real (home, foco, detalhe, TV, ajustes)
+
 ## Em andamento
-- [ ] Órbita com "cara de IA": definir com o usuário o que isso significa antes de mexer (conflita com a regra de identidade "sem roxo, glass")
+- [ ] Aurora: medir desempenho em hardware de TV (aurora em tela cheia + vidro + borda cônica); player (`.p-spin`, `.p-menu`, `.seek`) não visto
 - [ ] Órbita: conferir legibilidade dos rótulos monoespaçados a 3 m (talvez aumentar só nesse tema); selo de nota no canto inferior ainda não visto
 
 ## Pendências (auditoria de 2026-10-20), por prioridade

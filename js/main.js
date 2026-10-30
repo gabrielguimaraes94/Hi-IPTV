@@ -6,6 +6,7 @@ import { focusEl, onRootBack, pushLayer, popLayer } from './nav.js';
 import { playerOpen } from './player.js';
 import { loadEpg, refreshEpg, epgStale, epgStatus } from './epg.js';
 import * as V from './views.js';
+import { initFx, syncFx } from './fx.js';
 
 const $ = id => document.getElementById(id);
 const NAV = [['home', 'Início'], ['movies', 'Filmes'], ['series', 'Séries'], ['live', 'TV ao Vivo'], ['search', 'Buscar']];
@@ -51,7 +52,7 @@ onRootBack(() => {
 
 // Tema, tamanho do texto e animações viram atributos no <html>; o CSS faz o resto.
 const OPTS = [
-  ['theme', 'Tema', [['brasa', 'Brasa', '#ff5a36'], ['orbita', 'Órbita', '#36e2f5']]],
+  ['theme', 'Tema', [['brasa', 'Brasa', '#ff5a36'], ['orbita', 'Órbita', '#36e2f5'], ['aurora', 'Aurora', '#8b5cf6']]],
   ['scale', 'Tamanho do texto', [['normal', 'Normal'], ['tv', 'Grande']]],
   ['motion', 'Animações', [['full', 'Completas'], ['low', 'Reduzidas']]],
   ['live', 'Formato do ao vivo', [['ts', 'MPEG-TS'], ['hls', 'HLS']]],
@@ -61,7 +62,9 @@ function applyPrefs() {
   const d = document.documentElement.dataset;
   d.theme = prefs.get('theme'); d.scale = prefs.get('scale'); d.motion = prefs.get('motion');
   document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  syncFx();
 }
+initFx();
 applyPrefs();
 
 function optRow([key, label, choices]) {

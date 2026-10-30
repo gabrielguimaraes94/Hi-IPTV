@@ -82,7 +82,11 @@ python -I -m py_compile serve.py
 - Identidade: acento (`var(--accent)`: brasa `#ff5a36` no tema padrão, ciano `#36e2f5` no tema "Órbita") só em ação primária/foco
   no Brasa. O Órbita (bloco `[data-theme="orbita"]` no fim do `app.css`, futurista/minimalista) muda a **forma**, não só a cor: cantos retos,
   Sora fina em caixa alta nos títulos, rótulos em JetBrains Mono (`--mono`), fileiras numeradas (contador CSS `row`), portais e logos em preto e branco,
-  foco/hover com mira nos cantos (`--hud`) em vez de zoom. Só recolorir não basta, o usuário não percebeu a diferença. Nunca cor fixa no CSS, senão o tema alternativo quebra; `[data-motion="low"]` desliga animações globalmente; movimento só com `transform`/`opacity`; sem roxo, glass, emoji. Elemento próprio:
+  foco/hover com mira nos cantos (`--hud`) em vez de zoom. Só recolorir não basta, o usuário não percebeu a diferença.
+  O **Aurora** (`[data-theme="aurora"]`, "cara de produto de IA", pedido do usuário) é a exceção consciente à regra "sem roxo, glass": aurora azul/violeta
+  respirando em `body::before`, luz que segue o foco em `body::after` (lê `--fx/--fy` e `html.fx-on` de `js/fx.js`, ligado por `syncFx()` em `applyPrefs`),
+  borda em gradiente girando (`@property --ang`), vidro só em barras/painéis (nunca em cartões); `data-motion="low"` tira também o vidro.
+  Nunca cor fixa no CSS, senão o tema alternativo quebra; `[data-motion="low"]` desliga animações globalmente; movimento só com `transform`/`opacity`; no Brasa e no Órbita: sem roxo, glass, emoji. Elemento próprio:
   "portais" com pôsteres derivando. A skill `/ui-humanizer` foi usada; nenhum tell classe A restou.
 - Conteúdo adulto é removido na carga (regex `ADULT` + `is_adult`). Decisão pendente do usuário: bloqueio por senha?
 
