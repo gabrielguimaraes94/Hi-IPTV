@@ -61,7 +61,12 @@ python -I -m py_compile serve.py
   (a conta só tem 1 conexão). `o = { title, sub, url, alt, live, start, onTime, onEnd, onClose, zap }`; `alt` é o fallback do ao vivo
   (`.ts` via mpegts.js → `.m3u8` via hls.js). **Não volte o `.m3u8` para primeiro**: no provedor de teste cada recarga da playlist
   passa por um 302 com token novo (expira em ~12 s, então não dá para fixar a URL) e cai em servidores diferentes, fora de sincronia
-  (um com segmentos de 2,5 s, outro de 10 s e ~1 min atrás); o hls.js mistura os dois e o vídeo trava, pula e repete. Progresso (`prog`) é salvo a cada 5 s e ao fechar (`store.js`).
+  (um com segmentos de 2,5 s, outro de 10 s e ~1 min atrás); o hls.js mistura os dois e o vídeo trava, pula e repete. O padrão fica `.ts`;
+  só a preferência `live: 'hls'` (Ajustes → "Formato do ao vivo", `liveOpts` em `views.js`) inverte a ordem. Progresso (`prog`) é salvo a cada 5 s e ao fechar (`store.js`).
+- **Estado do navegador** (`store.js`): `ls` grava no `localStorage` com prefixo `hi:` (`cfg`, `prog`, `list`, `liveCat`, `lastLive`, `prefs`);
+  "Sair da conta" apaga `cfg/prog/list` + IndexedDB `catalog/epg`, mas **`prefs` sobrevive**. `prefs` (tema, escala, animações, formato do ao vivo)
+  vira `data-theme|scale|motion` no `<html>` (`applyPrefs` em `main.js`) e o CSS resolve o resto por variáveis (`--accent`, `--fs`…).
+- DOM é montado com `h(tag, props, ...kids)` de `ui.js` (sem framework); filhos/props `null`/`false` são ignorados (`0` e `''` não), então `cond && h(...)` é o idioma.
 - **Proxy** (`serve.py`): repassa `Range` e devolve `Content-Range/Length` (sem isso o Chrome rejeita filmes), e reescreve as linhas
   de `.m3u8` para voltarem ao `/proxy`. O browser só usa o proxy se `cfg.proxy` (`viaProxy()`).
 
@@ -74,7 +79,8 @@ python -I -m py_compile serve.py
   com a URL original** (normalização cria laço de erros; já causou milhares de 404).
 - 403 em stream costuma ser o limite de 1 conexão. mpegts.js só existe no jsDelivr (não no cdnjs).
 - CSS: animação `from`-only termina no valor base do elemento — não ponha `opacity:0` base com keyframe sem `to` (o texto do hero ficou invisível).
-- Identidade: acento brasa `#ff5a36` só em ação primária/foco; movimento só com `transform`/`opacity`; sem roxo, glass, emoji. Elemento próprio:
+- Identidade: acento (`var(--accent)`: brasa `#ff5a36` no tema padrão, ciano `#36e2f5` no tema "Órbita") só em ação primária/foco —
+  nunca cor fixa no CSS, senão o tema alternativo quebra; `[data-motion="low"]` desliga animações globalmente; movimento só com `transform`/`opacity`; sem roxo, glass, emoji. Elemento próprio:
   "portais" com pôsteres derivando. A skill `/ui-humanizer` foi usada; nenhum tell classe A restou.
 - Conteúdo adulto é removido na carga (regex `ADULT` + `is_adult`). Decisão pendente do usuário: bloqueio por senha?
 
