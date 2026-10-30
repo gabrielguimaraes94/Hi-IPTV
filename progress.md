@@ -14,11 +14,13 @@ Detalhes de cada passo estão no `git log`; arquitetura e armadilhas no `CLAUDE.
 - [x] 2026-10-21: guia de programação (Xtream `get_short_epg` e XMLTV para M3U)
 - [x] 2026-10-29: engrenagem no player: estatísticas para nerds, qualidade, áudio e velocidade
 - [x] 2026-10-29: ao vivo via `.ts` primeiro (o `.m3u8` do provedor de teste trava e repete trechos)
+- [x] 2026-10-29: Ajustes → "Aparência e reprodução": tema (Brasa/Órbita), tamanho do texto, animações e formato do ao vivo (MPEG-TS/HLS, só Xtream).
+      Órbita futurista/minimalista (cantos retos, Sora fina, rótulos JetBrains Mono, fileiras numeradas, mira no foco). Visto em Chrome headless
+      com a conta real (home, detalhe, TV, ajustes); hover/foco da mira visto com catálogo falso
 
 ## Em andamento
-- [ ] Ajustes → "Aparência e reprodução": tema (Brasa/Órbita), tamanho do texto (Normal/Grande), animações (Completas/Reduzidas)
-      e formato do ao vivo (MPEG-TS/HLS, só Xtream). Código pronto no working tree (`prefs` em `store.js`, `applyPrefs` em `main.js`,
-      `app.css`, fonte Sora no `index.html`), **ainda sem commit e sem validação no navegador**
+- [ ] Órbita com "cara de IA": definir com o usuário o que isso significa antes de mexer (conflita com a regra de identidade "sem roxo, glass")
+- [ ] Órbita: conferir legibilidade dos rótulos monoespaçados a 3 m (talvez aumentar só nesse tema); selo de nota no canto inferior ainda não visto
 
 ## Pendências (auditoria de 2026-10-20), por prioridade
 1. [ ] **TV fraca:** `nav.js` chama `getComputedStyle` em cada focável a cada tecla; portais animam mesmo fora da tela (pausar com IntersectionObserver)

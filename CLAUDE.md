@@ -79,8 +79,10 @@ python -I -m py_compile serve.py
   com a URL original** (normalização cria laço de erros; já causou milhares de 404).
 - 403 em stream costuma ser o limite de 1 conexão. mpegts.js só existe no jsDelivr (não no cdnjs).
 - CSS: animação `from`-only termina no valor base do elemento — não ponha `opacity:0` base com keyframe sem `to` (o texto do hero ficou invisível).
-- Identidade: acento (`var(--accent)`: brasa `#ff5a36` no tema padrão, ciano `#36e2f5` no tema "Órbita") só em ação primária/foco —
-  nunca cor fixa no CSS, senão o tema alternativo quebra; `[data-motion="low"]` desliga animações globalmente; movimento só com `transform`/`opacity`; sem roxo, glass, emoji. Elemento próprio:
+- Identidade: acento (`var(--accent)`: brasa `#ff5a36` no tema padrão, ciano `#36e2f5` no tema "Órbita") só em ação primária/foco
+  no Brasa. O Órbita (bloco `[data-theme="orbita"]` no fim do `app.css`, futurista/minimalista) muda a **forma**, não só a cor: cantos retos,
+  Sora fina em caixa alta nos títulos, rótulos em JetBrains Mono (`--mono`), fileiras numeradas (contador CSS `row`), portais e logos em preto e branco,
+  foco/hover com mira nos cantos (`--hud`) em vez de zoom. Só recolorir não basta, o usuário não percebeu a diferença. Nunca cor fixa no CSS, senão o tema alternativo quebra; `[data-motion="low"]` desliga animações globalmente; movimento só com `transform`/`opacity`; sem roxo, glass, emoji. Elemento próprio:
   "portais" com pôsteres derivando. A skill `/ui-humanizer` foi usada; nenhum tell classe A restou.
 - Conteúdo adulto é removido na carga (regex `ADULT` + `is_adult`). Decisão pendente do usuário: bloqueio por senha?
 

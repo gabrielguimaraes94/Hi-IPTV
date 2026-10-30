@@ -1,6 +1,6 @@
 // Telas: home, filmes, séries, TV ao vivo, busca e detalhes.
 import { D, vodInfo, seriesInfo, urlMovie, urlEpisode, urlLive } from './api.js';
-import { prog, mylist, ls } from './store.js';
+import { prog, mylist, ls, prefs } from './store.js';
 import { h, svg, ICON, img, card, ratingTag, lazyRow, watchRows, toast, fmtTime, fmtDur } from './ui.js';
 import { pushLayer, popLayer, focusEl, topLayer, setNeedMore } from './nav.js';
 import { openPlayer, closePlayer } from './player.js';
@@ -67,8 +67,9 @@ function liveOpts(list, i, catName) {
   ls.set('lastLive', c.id);
   // Xtream: .ts primeiro. Cada recarga do .m3u8 passa pelo redirecionamento do provedor e pode cair em outro servidor
   // (fora de sincronia, até ~1 min atrás), e o player pula/repete trechos. O .ts é uma conexão só, num servidor só.
-  const ts = urlLive(c, 'ts');
-  return { live: true, title: c.n, sub: catName, url: ts || urlLive(c), alt: ts ? urlLive(c) : null, epg: () => nowNext(c), zap: d => liveOpts(list, (i + d + n) % n, catName) };
+  // Ajustes → "Formato do ao vivo" pode inverter a ordem para provedores em que o .ts não abre.
+  const ts = urlLive(c, 'ts'), hls = urlLive(c), tsFirst = ts && prefs.get('live') !== 'hls';
+  return { live: true, title: c.n, sub: catName, url: tsFirst ? ts : hls, alt: tsFirst ? hls : ts, epg: () => nowNext(c), zap: d => liveOpts(list, (i + d + n) % n, catName) };
 }
 
 // ---------------------------------------------------------------- cartões e fileiras

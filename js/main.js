@@ -1,5 +1,5 @@
 // Boot: login → (atualização diária do catálogo | cache) → app.
-import { ls, idb } from './store.js';
+import { ls, idb, prefs } from './store.js';
 import { configure, conf, isM3u, login, refresh, loadCatalog, buildIndex, setBase, today, D } from './api.js';
 import { h, svg, ICON, toast } from './ui.js';
 import { focusEl, onRootBack, pushLayer, popLayer } from './nav.js';
@@ -49,6 +49,31 @@ onRootBack(() => {
 
 // ---------------------------------------------------------------- ajustes
 
+// Tema, tamanho do texto e animações viram atributos no <html>; o CSS faz o resto.
+const OPTS = [
+  ['theme', 'Tema', [['brasa', 'Brasa', '#ff5a36'], ['orbita', 'Órbita', '#36e2f5']]],
+  ['scale', 'Tamanho do texto', [['normal', 'Normal'], ['tv', 'Grande']]],
+  ['motion', 'Animações', [['full', 'Completas'], ['low', 'Reduzidas']]],
+  ['live', 'Formato do ao vivo', [['ts', 'MPEG-TS'], ['hls', 'HLS']]],
+];
+
+function applyPrefs() {
+  const d = document.documentElement.dataset;
+  d.theme = prefs.get('theme'); d.scale = prefs.get('scale'); d.motion = prefs.get('motion');
+  document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+}
+applyPrefs();
+
+function optRow([key, label, choices]) {
+  const seg = h('div', { class: 'seg' }, choices.map(([v, l, color]) =>
+    h('button', { type: 'button', class: 'seg-b', 'data-f': '', 'data-v': v, onclick: () => pick(v) },
+      color && h('i', { class: 'sw', style: `--c:${color}` }), l)));
+  const paint = () => seg.querySelectorAll('.seg-b').forEach(b => b.classList.toggle('on', b.dataset.v === prefs.get(key)));
+  const pick = v => { prefs.set(key, v); applyPrefs(); paint(); };
+  paint();
+  return h('div', { class: 'opt' }, h('span', {}, label), seg);
+}
+
 function epgText() {
   if (!isM3u()) return 'sob demanda (Xtream)';
   if (!conf().epg) return 'não configurado';
@@ -87,6 +112,9 @@ function settings() {
         h('dt', {}, 'Guia de programação'), h('dd', {}, epgText()),
         h('dt', {}, 'Catálogo'), h('dd', {}, `${D.vod.length.toLocaleString('pt-BR')} filmes · ${D.series.length.toLocaleString('pt-BR')} séries · ${D.live.length.toLocaleString('pt-BR')} canais`)),
       h('p', { class: 'hint' }, 'A lista é baixada na primeira abertura de cada dia. Conteúdo adulto fica oculto.'),
+      h('h3', {}, 'Aparência e reprodução'),
+      h('div', { class: 'opts' }, OPTS.filter(o => o[0] !== 'live' || !isM3u()).map(optRow)),
+      !isM3u() && h('p', { class: 'hint' }, 'MPEG-TS é o mais estável na maioria dos provedores. Use HLS se algum canal não abrir.'),
       h('div', { class: 'btns' },
         first,
         h('button', { class: 'btn', 'data-f': '', onclick: () => { ['cfg', 'prog', 'list'].forEach(k => ls.del(k)); Promise.all([idb.del('catalog'), idb.del('epg')]).then(() => location.reload()); } }, 'Sair da conta'),

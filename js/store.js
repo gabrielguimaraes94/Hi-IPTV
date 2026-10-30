@@ -7,6 +7,13 @@ export const ls = {
   del(k) { try { localStorage.removeItem('hi:' + k); } catch {} },
 };
 
+// Preferências da tela Ajustes. Ficam fora de 'cfg', então sobrevivem a "Sair da conta".
+const PREF_DEF = { theme: 'brasa', scale: 'normal', motion: 'full', live: 'ts' };
+export const prefs = {
+  get: k => ({ ...PREF_DEF, ...ls.get('prefs', {}) })[k],
+  set(k, v) { ls.set('prefs', { ...ls.get('prefs', {}), [k]: v }); },
+};
+
 let dbp;
 const open = () => dbp ||= new Promise((res, rej) => {
   const r = indexedDB.open('hi-iptv', 1);
