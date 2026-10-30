@@ -65,7 +65,10 @@ async function resumeEpisode(s, p) {
 function liveOpts(list, i, catName) {
   const c = list[i], n = list.length;
   ls.set('lastLive', c.id);
-  return { live: true, title: c.n, sub: catName, url: urlLive(c), alt: urlLive(c, 'ts'), epg: () => nowNext(c), zap: d => liveOpts(list, (i + d + n) % n, catName) };
+  // Xtream: .ts primeiro. Cada recarga do .m3u8 passa pelo redirecionamento do provedor e pode cair em outro servidor
+  // (fora de sincronia, até ~1 min atrás), e o player pula/repete trechos. O .ts é uma conexão só, num servidor só.
+  const ts = urlLive(c, 'ts');
+  return { live: true, title: c.n, sub: catName, url: ts || urlLive(c), alt: ts ? urlLive(c) : null, epg: () => nowNext(c), zap: d => liveOpts(list, (i + d + n) % n, catName) };
 }
 
 // ---------------------------------------------------------------- cartões e fileiras

@@ -102,6 +102,8 @@ class Handler(SimpleHTTPRequestHandler):
                 # Conteúdo de terceiros nunca executa na origem do app (onde ficam as credenciais).
                 self.send_header("Content-Security-Policy", "sandbox")
                 self.send_header("X-Content-Type-Options", "nosniff")
+                # Ao vivo nunca pode vir do cache (reabrir o canal repetiria o que já passou).
+                self.send_header("Cache-Control", "no-store")
                 if body is None:
                     # Necessário para seek e para o Chrome aceitar respostas 206 de vídeo.
                     for h in ("Content-Length", "Content-Range", "Accept-Ranges"):

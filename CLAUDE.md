@@ -59,7 +59,9 @@ python -I -m py_compile serve.py
   (`watchRows`, `showGrid`). Ao fechar camada o foco volta ao elemento anterior.
 - **Player** (`player.js`): um único estado `P`; `openPlayer(o)` reaproveita a camada e `load(o)` **sempre destrói o engine anterior**
   (a conta só tem 1 conexão). `o = { title, sub, url, alt, live, start, onTime, onEnd, onClose, zap }`; `alt` é o fallback do ao vivo
-  (`.m3u8` → `.ts` via mpegts.js). Progresso (`prog`) é salvo a cada 5 s e ao fechar (`store.js`).
+  (`.ts` via mpegts.js → `.m3u8` via hls.js). **Não volte o `.m3u8` para primeiro**: no provedor de teste cada recarga da playlist
+  passa por um 302 com token novo (expira em ~12 s, então não dá para fixar a URL) e cai em servidores diferentes, fora de sincronia
+  (um com segmentos de 2,5 s, outro de 10 s e ~1 min atrás); o hls.js mistura os dois e o vídeo trava, pula e repete. Progresso (`prog`) é salvo a cada 5 s e ao fechar (`store.js`).
 - **Proxy** (`serve.py`): repassa `Range` e devolve `Content-Range/Length` (sem isso o Chrome rejeita filmes), e reescreve as linhas
   de `.m3u8` para voltarem ao `/proxy`. O browser só usa o proxy se `cfg.proxy` (`viaProxy()`).
 

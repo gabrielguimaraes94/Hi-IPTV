@@ -27,7 +27,8 @@ As credenciais ficam só no `localStorage` do navegador — nunca no código.
   na grade de TV ao Vivo.
 - **Continuar assistindo** e **Minha lista** ficam no navegador.
 - **Conteúdo adulto** é removido na carga do catálogo.
-- **Player:** HLS (hls.js) e MPEG-TS (mpegts.js). Canais ao vivo usam `.m3u8` com fallback para `.ts`.
+- **Player:** HLS (hls.js) e MPEG-TS (mpegts.js). Canais ao vivo (Xtream) usam `.ts` com fallback para `.m3u8`: o `.m3u8`
+  do provedor redireciona cada recarga para servidores fora de sincronia, e o vídeo pulava e repetia trechos.
   Só um stream por vez — muitas contas permitem apenas 1 conexão.
 - **Engrenagem no player:** "Estatísticas para nerds" (motor, resolução/fps, codecs, taxa, banda, buffer, latência, quadros
   perdidos, servidor — só o host, nunca a URL com usuário/senha), **Qualidade** e **Áudio** (quando o stream HLS oferece mais de uma
